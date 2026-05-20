@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "expo-face-liveness-for-aws-amplify": ["../src/index"],
+      "expo-face-liveness-for-aws-amplify/*": ["../src/*"]
+    }
+  }
+}
