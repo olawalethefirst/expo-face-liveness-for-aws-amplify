@@ -27,6 +27,21 @@ Other versions may work, but they are not part of the tested release matrix.
 | Expo Go | Not supported |
 | Custom development client / EAS build | Supported |
 
+## Demo
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/assets/ios.gif" alt="Face Liveness running on iOS" width="280" /><br />
+      <strong>iOS</strong>
+    </td>
+    <td align="center">
+      <img src="./docs/assets/android.gif" alt="Face Liveness running on Android" width="280" /><br />
+      <strong>Android</strong>
+    </td>
+  </tr>
+</table>
+
 ## Installation
 
 ```bash
