@@ -3,6 +3,7 @@ import {
   setAuthCredentials,
   type AuthCredentials,
 } from "expo-face-liveness-for-aws-amplify";
+import { Camera } from "expo-camera";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
@@ -26,6 +27,13 @@ export default function App() {
     async function setup() {
       if (!API_BASE_URL) {
         setError("EXPO_PUBLIC_FACE_LIVENESS_API_URL is not configured.");
+        return;
+      }
+
+      const cameraPermission = await Camera.requestCameraPermissionsAsync();
+
+      if (!cameraPermission.granted) {
+        setError("Camera permission is required for face liveness verification.");
         return;
       }
 
