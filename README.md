@@ -56,9 +56,22 @@ npx expo prebuild --clean
 
 This package includes native iOS and Android code. Use a custom development client or an EAS/native build after installing or changing the config plugin.
 
+## Camera Permission
+
+Face Liveness requires camera access before the detector starts streaming. The config plugin only declares the native permissions:
+
+- Android: adds `android.permission.CAMERA` to the generated Android manifest.
+- iOS: sets `NSCameraUsageDescription` in `Info.plist`.
+
+The consuming app must still request and receive runtime camera permission from the user before rendering `FaceLivenessDetectorView`. On Android 6.0/API 23 and later, declaring `android.permission.CAMERA` is not enough because camera access is protected by Android runtime permissions. On iOS, the app also needs user authorization for camera capture; the `NSCameraUsageDescription` value is the message shown in the system permission prompt.
+
+If the detector is rendered before camera permission is granted, the underlying AWS Amplify Face Liveness SDK can fail with a camera permission error such as `CameraPermissionDeniedException`.
+
+Use your app's existing permission library or React Native's platform APIs to request camera access before starting liveness. For example, Expo apps commonly use `expo-camera`'s `useCameraPermissions` hook or `Camera.requestCameraPermissionsAsync()`.
+
 ## Usage
 
-Create a Face Liveness session and temporary AWS credentials on your backend. Then set those credentials before rendering the detector view.
+Request camera permission, create a Face Liveness session and temporary AWS credentials on your backend, then set those credentials before rendering the detector view.
 
 ```tsx
 import {
@@ -92,12 +105,14 @@ await setAuthCredentials(data.credentials);
 
 The expected app flow is:
 
-1. Your backend creates a Face Liveness session.
-2. Your backend returns the `sessionId`, AWS `region`, and temporary scoped credentials.
-3. The app calls `setAuthCredentials(credentials)`.
-4. The app renders `FaceLivenessDetectorView`.
-5. The app handles `onAnalysisComplete`.
-6. Your backend checks the final Face Liveness result.
+1. The app requests camera permission from the user.
+2. The app confirms camera permission is granted.
+3. Your backend creates a Face Liveness session.
+4. Your backend returns the `sessionId`, AWS `region`, and temporary scoped credentials.
+5. The app calls `setAuthCredentials(credentials)`.
+6. The app renders `FaceLivenessDetectorView`.
+7. The app handles `onAnalysisComplete`.
+8. Your backend checks the final Face Liveness result.
 
 Do not ship long-lived AWS credentials in the app bundle.
 
@@ -188,6 +203,8 @@ If native permission or plugin changes are not reflected, run:
 ```bash
 npx expo prebuild --clean
 ```
+
+If the detector fails with `CameraPermissionDeniedException` or a similar camera permission error, confirm that the app requested runtime camera permission and only rendered `FaceLivenessDetectorView` after the permission status was granted.
 
 If the detector fails with credential errors, confirm that `setAuthCredentials` is called before rendering the detector and that the credentials have not expired.
 
