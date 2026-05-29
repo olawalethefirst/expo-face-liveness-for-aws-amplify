@@ -2,49 +2,48 @@ package expo.modules.faceliveness
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import java.net.URL
 
 class FaceLivenessDetectorModule : Module() {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
   override fun definition() = ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('FaceLivenessDetector')` in JavaScript.
     Name("FaceLivenessDetector")
 
-    // Defines constant property on the module.
-    Constant("PI") {
-      Math.PI
+    AsyncFunction("setAuthCredentials") { credentials: Map<String, String> ->
+      FaceLivenessDetectorCredentialStore.set(
+        FaceLivenessDetectorAWSTemporaryCredentials(
+          accessKeyId = credentials["accessKeyId"]
+            ?: throw IllegalArgumentException("accessKeyId is required"),
+          secretAccessKey = credentials["secretAccessKey"]
+            ?: throw IllegalArgumentException("secretAccessKey is required"),
+          sessionToken = credentials["sessionToken"]
+            ?: throw IllegalArgumentException("sessionToken is required"),
+          expiration = credentials["expiration"]
+            ?: throw IllegalArgumentException("expiration is required")
+        )
+      )
     }
 
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      "Hello world! 👋"
+    AsyncFunction("clearAuthCredentials") {
+      FaceLivenessDetectorCredentialStore.clear()
     }
 
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { value: String ->
-      // Send an event to JavaScript.
-      sendEvent("onChange", mapOf(
-        "value" to value
-      ))
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of
-    // the view definition: Prop, Events.
-    View(FaceLivenessDetectorView::class) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { view: FaceLivenessDetectorView, url: URL ->
-        view.webView.loadUrl(url.toString())
+    View(FaceLivenessDetectorExpoView::class) {
+      Prop("sessionId") { view: FaceLivenessDetectorExpoView, value: String ->
+        view.sessionId = value
       }
-      // Defines an event that the view can send to JavaScript.
-      Events("onLoad")
+
+      Prop("region") { view: FaceLivenessDetectorExpoView, value: String ->
+        view.region = value
+      }
+
+      Prop("disableStartView") { view: FaceLivenessDetectorExpoView, value: Boolean ->
+        view.disableStartView = value
+      }
+
+      Prop("challengeOptions") { view: FaceLivenessDetectorExpoView, value: Map<String, Any>? ->
+        view.challengeOptions = value
+      }
+
+      Events("onAnalysisComplete", "onError")
     }
   }
 }

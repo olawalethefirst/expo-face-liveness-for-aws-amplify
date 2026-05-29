@@ -11,8 +11,7 @@ Pod::Spec.new do |s|
   s.author         = package['author']
   s.homepage       = package['homepage']
   s.platforms      = {
-    :ios => '15.1',
-    :tvos => '15.1'
+    :ios => '15.1'
   }
   s.swift_version  = '5.9'
   s.source         = { git: 'https://github.com/olawalethefirst/expo-face-liveness-for-aws-amplify' }
@@ -20,7 +19,12 @@ Pod::Spec.new do |s|
 
   s.dependency 'ExpoModulesCore'
 
-  # Swift/Objective-C compatibility
+  spm_dependency(s,
+    url: 'https://github.com/aws-amplify/amplify-ui-swift-liveness.git',
+    requirement: { kind: 'upToNextMajorVersion', minimumVersion: '1.0.0' },
+    products: ['FaceLiveness']
+  )
+
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
   }

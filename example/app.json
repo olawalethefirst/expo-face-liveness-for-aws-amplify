@@ -27,6 +27,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "../app.plugin.js",
+        {
+          "cameraPermission": "Allow this app to use the camera for face liveness verification."
+        }
+      ]
+    ]
   }
 }

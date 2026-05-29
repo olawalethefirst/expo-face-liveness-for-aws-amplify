@@ -1,73 +1,115 @@
-import { useEvent } from 'expo';
-import FaceLivenessDetector, { FaceLivenessDetectorView } from 'expo-face-liveness-for-aws-amplify';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import {
+  FaceLivenessDetectorView,
+  setAuthCredentials,
+  type AuthCredentials,
+} from "expo-face-liveness-for-aws-amplify";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_FACE_LIVENESS_API_URL;
+
+type LivenessSession = {
+  sessionId: string;
+  region: string;
+};
+
+type LivenessSessionResponse = LivenessSession & {
+  credentials: AuthCredentials;
+};
 
 export default function App() {
-  const onChangePayload = useEvent(FaceLivenessDetector, 'onChange');
+  const [livenessSession, setLivenessSession] =
+    useState<LivenessSession | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function setup() {
+      if (!API_BASE_URL) {
+        setError("EXPO_PUBLIC_FACE_LIVENESS_API_URL is not configured.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/face-liveness/session`, {
+        method: "POST",
+      });
+      const data = (await response.json()) as LivenessSessionResponse;
+
+      await setAuthCredentials(data.credentials);
+
+      setLivenessSession({
+        sessionId: data.sessionId,
+        region: data.region,
+      });
+    }
+
+    setup().catch((error) => {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to start liveness session.",
+      );
+    });
+  }, []);
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.error}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!livenessSession) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{FaceLivenessDetector.PI}</Text>
-        </Group>
-        <Group name="Functions">
-          <Text>{FaceLivenessDetector.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
-          <Button
-            title="Set value"
-            onPress={async () => {
-              await FaceLivenessDetector.setValueAsync('Hello from JS!');
-            }}
-          />
-        </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <FaceLivenessDetectorView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
-        </Group>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+    <View style={styles.container}>
+      <FaceLivenessDetectorView
+        sessionId={livenessSession.sessionId}
+        region={livenessSession.region}
+        disableStartView
+        style={styles.detector}
+        onAnalysisComplete={async (event) => {
+          const completedSessionId = event.nativeEvent.sessionId;
+          const resultResponse = await fetch(
+            `${API_BASE_URL}/face-liveness/session/${completedSessionId}/result`,
+          );
+          const result = await resultResponse.json();
 
-function Group(props: { name: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <Text style={styles.groupHeader}>{props.name}</Text>
-      {props.children}
+          Alert.alert(
+            "Successful",
+            `Confidence: ${result.confidence ?? "unavailable"}`,
+          );
+        }}
+        onError={(event) => {
+          console.log("Face liveness error:", event.nativeEvent);
+          setError(event.nativeEvent.message);
+        }}
+      />
     </View>
   );
 }
 
-const styles = {
-  header: {
-    fontSize: 30,
-    margin: 20,
-  },
-  groupHeader: {
-    fontSize: 20,
-    marginBottom: 20,
-  },
-  group: {
-    margin: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
+const styles = StyleSheet.create({
+  centered: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
   },
   container: {
     flex: 1,
-    backgroundColor: '#eee',
   },
-  view: {
+  detector: {
     flex: 1,
-    height: 200,
   },
-};
+  error: {
+    color: "#b00020",
+    textAlign: "center",
+  },
+});

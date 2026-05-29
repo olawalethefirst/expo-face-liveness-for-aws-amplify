@@ -1,19 +1,40 @@
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { NativeSyntheticEvent, ViewProps } from "react-native";
 
-export type OnLoadEventPayload = {
-  url: string;
+export type AuthCredentials = {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string;
+  expiration: string;
 };
 
-export type FaceLivenessDetectorModuleEvents = {
-  onChange: (params: ChangeEventPayload) => void;
+export type AnalysisCompleteEvent = {
+  sessionId: string;
 };
 
-export type ChangeEventPayload = {
-  value: string;
+export type FaceLivenessErrorEvent = {
+  code?: string | number;
+  message: string;
+  sessionId?: string;
+  recoverySuggestion?: string;
 };
 
-export type FaceLivenessDetectorViewProps = {
-  url: string;
-  onLoad: (event: { nativeEvent: OnLoadEventPayload }) => void;
-  style?: StyleProp<ViewStyle>;
+export type FaceLivenessDetectorCamera = "front" | "back";
+
+export type ChallengeOptions = {
+  faceMovement?: {
+    camera?: FaceLivenessDetectorCamera;
+  };
 };
+
+export type FaceLivenessDetectorViewProps = ViewProps & {
+  sessionId: string;
+  region: string;
+  disableStartView?: boolean;
+  challengeOptions?: ChallengeOptions;
+  onAnalysisComplete?: (
+    event: NativeSyntheticEvent<AnalysisCompleteEvent>,
+  ) => void;
+  onError?: (event: NativeSyntheticEvent<FaceLivenessErrorEvent>) => void;
+};
+
+export type FaceLivenessDetectorModuleEvents = Record<string, never>;

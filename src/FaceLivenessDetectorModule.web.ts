@@ -1,15 +1,25 @@
-import { registerWebModule, NativeModule } from 'expo';
+import { NativeModule, registerWebModule } from "expo";
 
-import { FaceLivenessDetectorModuleEvents } from './FaceLivenessDetector.types';
+import {
+  AuthCredentials,
+  FaceLivenessDetectorModuleEvents,
+} from "./FaceLivenessDetector.types";
 
 class FaceLivenessDetectorModule extends NativeModule<FaceLivenessDetectorModuleEvents> {
-  PI = Math.PI;
-  async setValueAsync(value: string): Promise<void> {
-    this.emit('onChange', { value });
+  async setAuthCredentials(_credentials: AuthCredentials): Promise<void> {
+    throw new Error(
+      "FaceLivenessDetector is only available on iOS and Android.",
+    );
   }
-  hello() {
-    return 'Hello world! 👋';
+
+  async clearAuthCredentials(): Promise<void> {
+    throw new Error(
+      "FaceLivenessDetector is only available on iOS and Android.",
+    );
   }
 }
 
-export default registerWebModule(FaceLivenessDetectorModule, 'FaceLivenessDetectorModule');
+export default registerWebModule(
+  FaceLivenessDetectorModule,
+  "FaceLivenessDetectorModule",
+);

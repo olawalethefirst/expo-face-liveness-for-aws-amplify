@@ -1,12 +1,26 @@
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from "expo";
 
-import { FaceLivenessDetectorModuleEvents } from './FaceLivenessDetector.types';
+import {
+  AuthCredentials,
+  FaceLivenessDetectorModuleEvents,
+} from "./FaceLivenessDetector.types";
 
-declare class FaceLivenessDetectorModule extends NativeModule<FaceLivenessDetectorModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+declare class FaceLivenessDetectorNativeModule extends NativeModule<FaceLivenessDetectorModuleEvents> {
+  setAuthCredentials(credentials: AuthCredentials): Promise<void>;
+  clearAuthCredentials(): Promise<void>;
 }
 
-// This call loads the native module object from the JSI.
-export default requireNativeModule<FaceLivenessDetectorModule>('FaceLivenessDetector');
+const FaceLivenessDetectorModule =
+  requireNativeModule<FaceLivenessDetectorNativeModule>("FaceLivenessDetector");
+
+export async function setAuthCredentials(
+  credentials: AuthCredentials,
+): Promise<void> {
+  return FaceLivenessDetectorModule.setAuthCredentials(credentials);
+}
+
+export async function clearAuthCredentials(): Promise<void> {
+  return FaceLivenessDetectorModule.clearAuthCredentials();
+}
+
+export default FaceLivenessDetectorModule;
