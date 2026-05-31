@@ -2,7 +2,9 @@
 
 ## 0.1.0
 
-Initial release.
+Initial public release.
+
+This version introduces the first working Expo module integration for AWS Amplify Face Liveness across iOS and Android, including native detector views, credential setup APIs, TypeScript types, config plugin support, and example app wiring.
 
 ### Added
 

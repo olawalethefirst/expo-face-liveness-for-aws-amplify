@@ -1,6 +1,6 @@
 # expo-face-liveness-for-aws-amplify
 
-Expo module wrapper for AWS Amplify Face Liveness on iOS and Android.
+I built an Expo module that lets teams integrate AWS Amplify Face Liveness into Android and iOS Expo apps using a reusable native wrapper, config plugin, and JavaScript API.
 
 ## Compatibility
 
