@@ -2,10 +2,12 @@ package expo.modules.faceliveness
 
 import android.content.Context
 import android.util.Log
+import android.view.View
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import com.amplifyframework.ui.liveness.ui.Camera
 import com.amplifyframework.ui.liveness.ui.ChallengeOptions
 import com.amplifyframework.ui.liveness.ui.FaceLivenessDetector
@@ -28,6 +30,11 @@ class FaceLivenessDetectorExpoView(
   private val challengeOptionsState = mutableStateOf(ChallengeOptions())
   private val onAnalysisComplete by EventDispatcher()
   private val onError by EventDispatcher()
+
+  // Tracks window attachment so measurement is skipped while Fabric mounts this
+  // view detached (modal or screen transitions); Compose needs an attached
+  // window to resolve its recomposer during measure.
+  private var hasAttachedToWindow = false
 
   var sessionId: String?
     get() = sessionIdState.value
@@ -85,6 +92,11 @@ class FaceLivenessDetectorExpoView(
   }
 
   init {
+    // The default is DisposeOnDetachedFromWindowOrReleasedFromPool. This view is
+    // never inside a pooling container, so DisposeOnDetachedFromWindow is
+    // equivalent here; pinning it keeps the detach behavior explicit.
+    composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+
     addView(
       composeView,
       LayoutParams(
@@ -152,8 +164,75 @@ class FaceLivenessDetectorExpoView(
     }
   }
 
+  override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+    // Fabric can measure this view while it is detached (modal mounts,
+    // screens detaching inactive screens). ComposeView.onMeasure would then
+    // resolve a window recomposer and throw "Cannot locate windowRecomposer".
+    if (!hasAttachedToWindow) {
+      val specWidth = View.MeasureSpec.getSize(widthMeasureSpec)
+      val specHeight = View.MeasureSpec.getSize(heightMeasureSpec)
+      setMeasuredDimension(
+        if (specWidth > 0) specWidth else suggestedMinimumWidth,
+        if (specHeight > 0) specHeight else suggestedMinimumHeight
+      )
+      return
+    }
+
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+  }
+
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    hasAttachedToWindow = true
+    scheduleMeasureAndLayout()
+  }
+
+  override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+    super.onLayout(changed, left, top, right, bottom)
+
+    if (!hasAttachedToWindow || width <= 0 || height <= 0) {
+      return
+    }
+
+    // Fabric does not always re-measure the subtree after attachment. Measure
+    // the Compose view explicitly so the detector cannot stay blank.
+    composeView.measure(
+      View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+      View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+    )
+    composeView.layout(0, 0, width, height)
+  }
+
+  override fun requestLayout() {
+    super.requestLayout()
+    scheduleMeasureAndLayout()
+  }
+
+  private fun scheduleMeasureAndLayout() {
+    if (!hasAttachedToWindow) {
+      return
+    }
+
+    removeCallbacks(measureAndLayout)
+    post(measureAndLayout)
+  }
+
   override fun onDetachedFromWindow() {
-    composeView.disposeComposition()
+    hasAttachedToWindow = false
+    removeCallbacks(measureAndLayout)
     super.onDetachedFromWindow()
   }
+
+  private val measureAndLayout = Runnable {
+    if (!hasAttachedToWindow || width <= 0 || height <= 0) {
+      return@Runnable
+    }
+
+    measure(
+      View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+      View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+    )
+    layout(left, top, right, bottom)
+  }
+
 }
