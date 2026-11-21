@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+### Fixed
+
+- Android: fixed a crash (`Cannot locate windowRecomposer`) when the detector view is measured before it is attached to a window under the React Native new architecture, for example in modals or screens that detach inactive views.
+
 ## 0.1.0
 
 Initial public release.
